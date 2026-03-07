@@ -1,0 +1,18 @@
+---
+layout: post
+title: "通过github更新网页内容"
+date: 2026-03-05
+categories: new page
+---
+
+
+## 终于成功了！
+
+这是我通过 **macOS 26.3** 终端推送到 GitHub 的第一篇文章。
+
+### 记录一下踩过的坑：
+1. 代理端口 `7890` 冲突。
+2. Git 分支 `master` 与 `main` 的爱恨情仇。
+3. `baseurl` 导致的 CSS 丢失。
+
+现在，一切都恢复正常了。
