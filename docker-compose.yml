@@ -1,0 +1,12 @@
+services:
+  jekyll:
+    image: jekyll/jekyll:4.2.2
+    platform: linux/amd64  # 加上这一行，解决架构不匹配警告
+    volumes:
+      - .:/srv/jekyll
+    ports:
+      - "4000:4000"
+    command: jekyll serve --watch --force_polling --livereload --trace
+    environment:
+      - JEKYLL_ENV=development
+
