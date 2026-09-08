@@ -1,58 +1,78 @@
-theme: minimal-mistakes-jekyll  # 主题名
+# ======================================================
+# Hydejack 站点配置
+# 参考: https://github.com/hydecorp/hydejack-starter-kit
+# ======================================================
+
+# 语言（影响 <html lang>）
+lang: zh-CN
+
+# 站点标题 / 描述
 title: "我的工作笔记."
 description: "记录技术探索"
-# Welcome to Jekyll!
-#
-# This config file is meant for settings that affect your whole blog, values
-# which you are expected to set up once and rarely edit after that. If you find
-# yourself editing this file very often, consider using Jekyll's data files
-# feature for the data you need to update frequently.
-#
-# For technical reasons, this file is *NOT* reloaded automatically when you use
-# 'bundle exec jekyll serve'. If you change this file, please restart the server process.
-#
-# If you need help with YAML syntax, here are some quick references for you: 
-# https://learn-the-web.algonquindesign.ca/topics/markdown-yaml-cheat-sheet/#yaml
-# https://learnxinyminutes.com/docs/yaml/
-#
-# Site settings
-# These are used to personalize your new site. If you look in the HTML files,
-# you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
-# You can create any custom variable you would like, and they will be accessible
-# in the templates via {{ site.myvariable }}.
+tagline: "记录技术探索"
 
-title: Your awesome title
-email: your-email@example.com
-description: >- # this means to ignore newlines until "baseurl:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
-baseurl: "/gumengqi.github.io" # the subpath of your site, e.g. /blog
-url: "https://sarah-mengqigu.github.io" # the base hostname & protocol for your site, e.g. http://example.com
-twitter_username: jekyllrb
-github_username:  jekyll
+# 作者（改成你的名字/邮箱；帖子 front matter 可用 author 指定其他人）
+author:
+  name: sarah-mengqigu   # TODO: 改成你的昵称/姓名
+  email: gumengqi2025@gmail.com  # TODO: 改成你的邮箱
 
-# Build settings
-theme: minima
+# 部署地址（保留你原来的值）
+url: "https://sarah-mengqigu.github.io/gumengqi.github.io"
+# 注意：若站点是 GitHub 用户主页(username.github.io)，应把 baseurl 改为 ""；
+# 这里是普通项目页/子路径部署时用的前缀。
+baseurl: "/gumengqi.github.io"
+
+# 侧边栏菜单（url 需带上 baseurl 前缀；若上面 baseurl 改为 ""，要去掉前缀）
+menu:
+  - title: 首页
+    url: /gumengqi.github.io/
+  - title: 归档
+    url: /gumengqi.github.io/posts/
+  - title: 关于
+    url: /gumengqi.github.io/about/
+
+# 页脚版权
+copyright: "© 2026. All rights reserved."
+
+# 分页（blog/list 布局使用）
+paginate: 10
+paginate_path: /:num/
+
+# 主题
+theme: jekyll-theme-hydejack
+
+# 插件（与 Gemfile 的 :jekyll_plugins 组保持一致）
 plugins:
   - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-paginate
+  - jekyll-include-cache
+  - jekyll-default-layout
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-redirect-from
+  - jekyll-relative-links
+  - jekyll-titles-from-headings
 
-# Exclude from processing.
-# The following items will not be processed, by default.
-# Any item listed under the `exclude:` key here will be automatically added to
-# the internal "default list".
-#
-# Excluded items can be processed by explicitly listing the directories or
-# their entries' file path in the `include:` list.
-#
-# exclude:
-#   - .sass-cache/
-#   - .jekyll-cache/
-#   - gemfiles/
-#   - Gemfile
-#   - Gemfile.lock
-#   - node_modules/
-#   - vendor/bundle/
-#   - vendor/cache/
-#   - vendor/gems/
-#   - vendor/ruby/
+# 主题色（Hydejack 风格）
+accent_color: rgb(79,177,186)
+theme_color: rgb(25,55,71)
+
+# Sass 压缩
+sass:
+  style: compressed
+
+# 排除（Jekyll 默认 + 本项目补充）
+exclude:
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - .bundle/

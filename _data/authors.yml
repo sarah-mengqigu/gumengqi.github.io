@@ -1,0 +1,10 @@
+# 站点作者；帖子 front matter 可通过 `author: author1` 指定
+author1:
+  name: sarah-mengqigu
+  email: gumengqi2025@gmail.com
+  about: |
+    记录技术探索。
+  picture:
+    path: https://via.placeholder.com/128x128
+  social:
+    github: sarah-mengqigu

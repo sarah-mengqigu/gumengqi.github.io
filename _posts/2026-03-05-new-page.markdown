@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "通过github更新网页内容"
+title: "jekyll+github pages博客搭建踩坑指南"
 date: 2026-03-05
 categories: new page
 ---
@@ -10,7 +10,11 @@ categories: new page
 
 这是我通过 **macOS 26.3** 终端推送到 GitHub 的第一篇文章。
 
-### 记录一下踩过的坑：
+### 踩坑1:版本依赖问题：
+我的工作电脑是Mac OS，最近很不明智地升级了操作系统版本，导致安装ruby的时候，因为操作系统版本过高，ruby没有兼容最新的版本号。
+
+直接转战Docker，
+
 1. 代理端口 `7890` 冲突。
 2. Git 分支 `master` 与 `main` 的爱恨情仇。
 3. `baseurl` 导致的 CSS 丢失。
