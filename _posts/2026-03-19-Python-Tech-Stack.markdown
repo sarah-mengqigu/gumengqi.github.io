@@ -1,4 +1,9 @@
-
+---
+layout: post
+title: "python开发须知"
+date: 2026-09-09
+tags: [python]
+---
 # Python虚拟机
 Python 虚拟机（PVM）模拟的是一台「基于栈的虚拟计算机」。
 它模拟了一套：
