@@ -2,9 +2,11 @@
 layout: post
 title: "python开发须知"
 date: 2026-09-09
-tags: [python]
+categories: python
 ---
-# Python虚拟机
+Python开发路上早晚会遇到的问题。
+
+## Python虚拟机
 Python 虚拟机（PVM）模拟的是一台「基于栈的虚拟计算机」。
 它模拟了一套：
 1. 一个栈（stack）
@@ -22,7 +24,7 @@ BINARY_ADD           → 从栈顶弹出两个数相加，结果压回栈
 
 它是一个纯逻辑层面的虚拟机，只在代码里存在。
 
-# Python解释器
+## Python解释器
 xxx.py文件 是纯文本，Python 做的事只有四步：
 **读文本 → 编译成字节码 → 丢给虚拟机跑 → 执行**
 
@@ -78,8 +80,6 @@ while 还有指令:
 • CALL_FUNCTION 1 → 调用函数
 
 
-
-
 **几个你可能疑惑的点**
 
 ① 为什么不用编译成 exe 也能跑？
@@ -99,9 +99,9 @@ python test.py
 多了两层翻译。
 
 
-# Python包管理
+## Python包管理
 
-## pip 包管理
+### pip 包管理
 当执行命令
 pip install requests
 pip 依次干这 5 件事：
@@ -155,9 +155,9 @@ pip 不会自动卸载没用的依赖（孤儿包）
 比如你卸载 requests，urllib3 还留在那。
 
 
-## setup.py
+### setup.py
 
-### 「安装说明书 + 打包脚本」
+#### 「安装说明书 + 打包脚本」
 
 1. 让别人可以用 pip install . 安装你的包
 2. 把你的代码打包成 .tar.gz / .whl，发到 PyPI（也就是 pip 官方源）
@@ -216,8 +216,7 @@ twine upload dist/*
 pip install my_tool
 
 
-
-### setup.py 工作原理
+#### setup.py 工作原理
 
 1. setup.py 基于 setuptools 这个库
 2. 你写的配置 → 传给 setup() 函数
@@ -240,7 +239,7 @@ setup.py = 包的安装+打包配置文件
 现代项目已经慢慢用 pyproject.toml 代替 setup.py 了，但原理完全一样。
 
 
-# Python虚环境
+## Python虚环境
 核心一句话：venv 本质就是「复制/链接一份 Python 解释器 + 改包查找路径」，从根源上做到环境隔离。
 
 当你运行：
@@ -267,10 +266,10 @@ venv 实现隔离靠三点：
 就是Python 级别的路径隔离。
 
 
-# Conda Poetry
+## Conda Poetry
 作为 Python 使用者，你可能会发现直接使用 pip 和 python -m venv 有时不足以应对复杂的项目需求——比如需要管理不同 Python 版本、处理非 Python 依赖的库（如科学计算）、确保团队成员依赖完全一致、或者准备发布自己的库。这时候就需要更强大的工具。
 
-## 一、Conda & Miniconda：环境与包的一站式管理
+### 一、Conda & Miniconda：环境与包的一站式管理
 
 1. 什么是 Conda？
 Conda 是一个开源的包管理系统和环境管理系统，它并非 Python 专属，但广泛应用于 Python 数据科学和机器学习领域。它可以：
@@ -359,7 +358,7 @@ pip install some-package
 
 ---
 
-## 二、Poetry：现代 Python 依赖管理与打包工具
+### 二、Poetry：现代 Python 依赖管理与打包工具
 
 Poetry 是一个专注于 Python 项目的工具，它统一了依赖管理、打包和发布。与传统的 pip + requirements.txt + setup.py 不同，Poetry 使用一个 pyproject.toml 文件来管理项目元数据和依赖，并提供锁文件确保确定性安装。
 
@@ -479,7 +478,7 @@ poetry publish
 
 ---
 
-## 三、对比与选择建议
+### 三、对比与选择建议
 
 特性 Conda / Miniconda Poetry
 主要用途 科学计算、数据科学、多语言依赖管理 纯 Python 项目开发、库打包与发布
@@ -507,7 +506,7 @@ poetry publish
 
 ---
 
-## 四、实际工作流示例
+### 四、实际工作流示例
 
 场景：数据分析项目（用 Miniconda）
 

@@ -2,10 +2,8 @@
 layout: post
 title: "从组合爆炸到精准覆盖：IaaS解决方案测试的场景空间建模与工程化实践"
 date: 2026-09-09
-categories: test engineering
+categories: Test-Engineering
 ---
-
-# 导语
 
 在云计算IaaS解决方案验证中，你是否遇到过这样的困境：为了覆盖现网场景，测试用例组合越来越多，但漏测却依然发生；执行负担越来越重，却说不清“我们到底测全了没有”？
 

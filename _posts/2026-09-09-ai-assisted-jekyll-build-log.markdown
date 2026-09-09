@@ -3,11 +3,7 @@ layout: post
 title: "github pages诞生日志：见证AI辅助的两个能力阶段"
 date: 2026-09-09
 categories: log
-tags: [ai, jekyll, hydejack, github-pages]
 ---
-
-# 两次 AI 辅助搭建 Jekyll 博客的技术复盘
-
 这个博客是一个 Jekyll 静态站点，托管在 GitHub Pages 上。它的搭建过程本身就是一段“AI 辅助工程实践”的样本：**第一次（2026 年 3 月）由 Gemini 以对话形式指导我手动部署；第二次（2026 年 9 月）由 Codex（接入 DeepSeek V4 Flash）自动诊断并修复环境**。两次面对的是同一个根因——非常新的 macOS 版本带来的 Ruby 生态兼容性问题，但处理方式、路径和最终结果完全不同。
 
 本文按时间线展开，尽量保留关键命令、报错原文和解决思路，方便日后复用。
