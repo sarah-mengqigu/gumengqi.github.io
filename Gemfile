@@ -3,8 +3,8 @@ source "https://rubygems.org"
 # Jekyll 版本
 gem "jekyll", "~> 4.2.2"
 
-# Hydejack 主题（开源免费版，GPL-3.0）
-gem "jekyll-theme-hydejack", "~> 9.1"
+# GitHub Pages 通过 remote_theme 使用 Hydejack 免费版；本地构建需该插件
+gem "jekyll-remote-theme"
 
 # Hydejack 依赖插件
 group :jekyll_plugins do
