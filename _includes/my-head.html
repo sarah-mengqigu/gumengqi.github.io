@@ -1,0 +1,12 @@
+{%- comment -%} 站点自定义 <head> 注入：调小文章页标题字号 {%- endcomment -%}
+<style>
+  h1.post-title { font-size: 2.6rem !important; line-height: 1.5 !important; }
+  @media (min-width: 30rem) { h1.post-title { font-size: 1.6rem !important; } }
+
+
+  /* 正文 Markdown 标题字号微调（h1 受主题“大标题特性”影响最大） */
+  .content h1:not(.post-title) { font-size: 1.5rem !important; line-height: 1.35 !important; }
+  .content h2 { font-size: 1.25rem !important; line-height: 1.4 !important; }
+  .content h3 { font-size: 0.95rem !important; line-height: 1.5 !important; }
+
+</style>
