@@ -1,0 +1,124 @@
+{%- comment -%} 站点注入：文章详情页右上角悬浮目录（h1~h4 锚点 + 滚动高亮；兼容 Hydejack SPA） {%- endcomment -%}
+<script>
+(function () {
+  "use strict";
+  var btnId = "hj-toc-btn";
+  var navId = "hj-toc";
+  var btn = null, nav = null, items = [], scrollHandler = null;
+  var rebuildTimer = null;
+  var suppress = false; /* 防止“添加自身节点 → body 变更 → 再次重建”死循环 */
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function headingText(h) {
+    var c = h.cloneNode(true);
+    Array.prototype.forEach.call(c.querySelectorAll("a, sup, .anchor"), function (x) { x.remove(); });
+    return (c.textContent || "").replace(/\s+/g, " ").trim();
+  }
+  function destroy() {
+    if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
+    if (nav && nav.parentNode) nav.parentNode.removeChild(nav);
+    if (scrollHandler) { window.removeEventListener("scroll", scrollHandler); scrollHandler = null; }
+    btn = null; nav = null; items = [];
+  }
+
+  function build() {
+    if (suppress) return;
+    suppress = true;
+    try {
+      destroy();
+      var main = document.querySelector("main");
+      if (!main) return;
+      /* 仅单篇文章详情页：main 中恰好一个文章大标题（首页/列表是多卡片则跳过） */
+      if (main.querySelectorAll("h1.post-title").length !== 1) return;
+      var heads = Array.prototype.slice.call(
+        main.querySelectorAll("h1[id], h2[id], h3[id], h4[id]")
+      );
+      heads = heads.filter(function (h) { return !h.classList.contains("post-title"); });
+      if (heads.length < 2) return;
+
+      btn = el("button", null, "目录");
+      btn.id = btnId; btn.type = "button";
+      btn.setAttribute("aria-label", "显示/隐藏目录");
+
+      nav = el("nav", null, null);
+      nav.id = navId;
+      var ul = el("ul");
+      items = heads.map(function (h) {
+        var li = el("li", "lvl" + h.tagName.charAt(1));
+        var a = el("a", null, headingText(h));
+        a.href = "#" + h.id;
+        a.addEventListener("click", function (e) {
+          e.preventDefault();
+          var t = document.getElementById(h.id);
+          if (t) {
+            var y = t.getBoundingClientRect().top + window.pageYOffset - 84;
+            window.scrollTo({ top: y, behavior: "smooth" });
+            try { history.replaceState(null, "", "#" + h.id); } catch (err) {}
+          }
+          nav.classList.remove("open");
+        });
+        li.appendChild(a); ul.appendChild(li);
+        return { h: h, a: a };
+      });
+      nav.appendChild(ul);
+
+      btn.addEventListener("click", function () { nav.classList.toggle("open"); });
+      document.body.appendChild(btn);
+      document.body.appendChild(nav);
+
+      /* 点击其它区域关闭 */
+      document.addEventListener("click", function (e) {
+        if (nav && nav.classList.contains("open") &&
+            !nav.contains(e.target) && e.target !== btn) {
+          nav.classList.remove("open");
+        }
+      });
+
+      /* 滚动高亮当前章节（面板展开时更新） */
+      scrollHandler = function () {
+        if (!nav || !nav.classList.contains("open")) return;
+        var marker = window.pageYOffset + 120;
+        var cur = -1;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].h.getBoundingClientRect().top + window.pageYOffset <= marker) cur = i;
+        }
+        items.forEach(function (it, idx) {
+          it.a.classList.toggle("active", idx === cur);
+        });
+      };
+      window.addEventListener("scroll", scrollHandler, { passive: true });
+      scrollHandler();
+    } finally {
+      /* 释放抑制：等自身 DOM 写入产生的 mutation 先被消费 */
+      setTimeout(function () { suppress = false; }, 0);
+    }
+  }
+
+  function scheduleBuild() {
+    if (suppress) return;
+    if (rebuildTimer) clearTimeout(rebuildTimer);
+    rebuildTimer = setTimeout(build, 120);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", build);
+  } else {
+    build();
+  }
+
+  /* 观察 body：SPA 内容替换后重建（body 不会被 Hydejack 整体替换） */
+  if (window.MutationObserver) {
+    new MutationObserver(scheduleBuild).observe(document.body, { childList: true, subtree: true });
+  }
+  /* 事件备份（若主题在内容替换后触发） */
+  var ps = document.querySelector("hy-push-state");
+  if (ps && ps.addEventListener) {
+    ps.addEventListener("hy-push-state-load", scheduleBuild);
+  }
+})();
+</script>

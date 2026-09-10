@@ -9,4 +9,49 @@
   .content h2 { font-size: 1.25rem !important; line-height: 1.4 !important; }
   .content h3 { font-size: 0.95rem !important; line-height: 1.5 !important; }
 
+
+
+  /* ===== 悬浮目录 (右上角) ===== */
+  #hj-toc-btn {
+    position: fixed; top: 5.2rem; right: 1.1rem; z-index: 950;
+    font-size: .8rem; padding: .38rem .85rem; cursor: pointer;
+    color: #fff; background: rgba(20,64,84,.85);
+    border: 1px solid rgba(255,255,255,.3); border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.22); line-height: 1.2;
+  }
+  #hj-toc-btn:hover { background: rgba(20,64,84,1); }
+  #hj-toc {
+    display: none; position: fixed; top: 7.7rem; right: 1.1rem; z-index: 950;
+    width: 17rem; max-height: min(60vh, 34rem); overflow: auto;
+    padding: .6rem .8rem; background: rgba(255,255,255,.97);
+    border: 1px solid rgba(0,0,0,.14); border-radius: .6rem;
+    box-shadow: 0 6px 22px rgba(0,0,0,.18);
+    font-size: .82rem; line-height: 1.55; color: #333;
+  }
+  #hj-toc.open { display: block; }
+  #hj-toc ul { list-style: none; margin: 0; padding: 0; }
+  #hj-toc li { margin: .08rem 0; }
+
+  #hj-toc a {
+    display: block; padding: .1rem .35rem; color: #3f5a6e;
+    text-decoration: none; border-left: 2px solid transparent; border-radius: 3px;
+  }
+  #hj-toc a:hover { color: #111; background: rgba(79,177,186,.12); }
+  #hj-toc a.active { color: #0a7f8c; border-left-color: #4fb1ba; background: rgba(79,177,186,.10); }
+  @media (max-width: 48rem) {
+    #hj-toc-btn { right: .6rem; }
+    #hj-toc { right: .6rem; width: 15rem; }
+  }
+  @media (prefers-color-scheme: dark) {
+    #hj-toc { background: rgba(18,22,26,.97); color: #d5dde3; border-color: rgba(255,255,255,.16); }
+    #hj-toc a { color: #9db4c6; }
+    #hj-toc a:hover { color: #fff; }
+  }
+
+
+  #hj-toc li.lvl1 { padding-left: 0; font-weight: 600; margin-top: .3rem; }
+  #hj-toc li.lvl2 { padding-left: .25rem; }
+  #hj-toc li.lvl3 { padding-left: .7rem; }
+  #hj-toc li.lvl4 { padding-left: 1.4rem; }
+
 </style>
