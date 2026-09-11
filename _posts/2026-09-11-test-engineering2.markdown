@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "一种基于 DDT 的可 AI 端到端辅助的 API 测试方案"
+title: "一种基于 DDT(Data-Driven-Test) 的可 AI 端到端辅助的 API 测试方案"
 date: 2026-09-11
 categories: Test-Engineering
 ---
