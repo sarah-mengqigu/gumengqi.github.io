@@ -3,8 +3,9 @@ layout: post
 title: "一种基于 DDT(Data-Driven-Test) 的可 AI 端到端辅助的 API 测试方案"
 date: 2026-09-11
 categories: Test-Engineering
+excerpt: >-  
+    文章基于DDT思想，构建一套声明式、低成本扩展、适合 AI 参与协作的 API 测试框架
 ---
-
 
 传统API测试一个接口一个测试函数，参数写死在代码里，断言散落在各处。这种方式在规模扩大后会暴露三个问题：新增用例要改代码，接口调整要改代码，AI 基于此生成的测试代码也存在同样的问题。
 

@@ -1,10 +1,10 @@
 ---
 layout: post
 title: "python开发须知"
-date: 2026-09-09
+date: 2026-09-01
 categories: python
+excerpt: "Python开发路上早晚会遇到的问题"
 ---
-Python开发路上早晚会遇到的问题。
 
 ## Python虚拟机
 Python 虚拟机（PVM）模拟的是一台「基于栈的虚拟计算机」。

@@ -1,12 +1,15 @@
 ---
 layout: post
 title: "前端小白两小时被 AI Agent 带飞的实录"
-date: 2026-09-10
-categories: [jekyll]
+date: 2026-09-08
+categories: jekyll
+excerpt: >-  
+    一个前端小白，靠 AI Agent 在本博客上做 UI 改版。全程我只会说人话，Agent 负责把人话翻译成 HTML/CSS/JS。
+    唯一脑子灵机一动的时刻：安装两个前端skill，让之后的开发变得丝滑流畅。
 ---
 
-一个前端小白，靠 AI Agent 在本博客上做 UI 改版。全程我只会说“人话”，Agent 负责把“人话”翻译成 HTML/CSS/JS。
-**唯一脑子灵机一动的时刻：“安装两个前端skill”**，让我从“一次次指令”变成了“有截图、有规范地协作”。
+一个前端小白，靠 AI Agent 在本博客上做 UI 改版。全程我只会说人话，Agent 负责把人话翻译成 HTML/CSS/JS。
+唯一脑子灵机一动的时刻：安装两个前端skill，让之后的开发变得丝滑流畅。
 
 ## 故事要从一个很“小”的需求说起
 
