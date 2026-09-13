@@ -26,6 +26,8 @@ baseurl: "/gumengqi.github.io"
 menu:
   - title: 首页
     url: /gumengqi.github.io/
+  - title: 简历
+    url: /gumengqi.github.io/resume/
   - title: 归档
     url: /gumengqi.github.io/posts/
   - title: 关于
