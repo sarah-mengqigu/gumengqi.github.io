@@ -1,0 +1,296 @@
+---
+layout: post
+title: 【Pytest】Parameter 参数化开发指南
+date: 2026-02-16
+categories: Test-Engineering
+excerpt: 掌握参数动态加载，可有效提升测试用例的管理效率和测试脚本的执行效率
+---
+
+# 参数化入口概览
+
+除了熟知的 `@pytest.mark.parametrize`，pytest从广义上还支持另外两种参数化入口
+
+| 方式 | 用在哪 | 适合场景 |
+| :--- | :--- | :--- |
+| `@pytest.mark.parametrize` | 测试函数/测试类 | 一个测试逻辑，多组输入输出 |
+| `@pytest.fixture(params=...)` | fixture | 多个测试共享同一组参数化资源 |
+| `pytest_generate_tests` | hook，插件常用 | 动态生成参数，如从 JSON/YAML/DB 读用例 |
+
+---
+
+## `@pytest.mark.parametrize` 用法
+
+### 1. 基本写法
+
+```python
+import pytest
+
+@pytest.mark.parametrize("x, y, expected", [
+    (1, 2, 3),
+    (0, 0, 0),
+    (-1, 1, 0),
+])
+def test_add(x, y, expected):
+    assert x + y == expected    
+```
+
+### 2. 多组参数叠加：笛卡尔积
+
+```python
+@pytest.mark.parametrize("x", [0, 1])
+@pytest.mark.parametrize("y", [2, 3])
+def test_mul(x, y):
+    assert x * y >= 0
+
+```
+
+**注意**：叠加是笛卡尔积，容易爆炸，用之前先算数量。
+
+### 3. 给参数起可读 ID
+
+```python
+@pytest.mark.parametrize(
+    "env",
+    ["dev", "staging", "prod"],
+    ids=["development", "staging", "production"],
+)
+def test_env(env):
+    ...
+```
+
+测试名会变成 `test_env[development]`，`-k` 过滤更方便：
+
+```bash
+pytest -k "production"
+```
+
+### 4. 用 `pytest.param` 精细控制单个用例
+
+```python
+@pytest.mark.parametrize("value, expected", [
+    pytest.param(1, 1, id="positive"),
+    pytest.param(0, 0, id="zero"),
+    pytest.param(-1, 1, id="negative", marks=pytest.mark.slow),
+    pytest.param(999, 0, id="bug", marks=pytest.mark.xfail(reason="known bug")),
+])
+def test_abs(value, expected):
+    assert abs(value) == expected
+```
+
+`pytest.param` 可以挂：
+- `id`：用例 ID
+- `marks`：marker，如 `skip`、`xfail`、`slow`
+
+### 5. 间接参数化 `indirect`
+
+参数不直接传给测试，而是传给同名 fixture：
+
+```python
+@pytest.fixture
+def user(request):
+    return {"name": request.param, "id": hash(request.param)}
+
+@pytest.mark.parametrize("user", ["alice", "bob"], indirect=True)
+def test_user(user):
+    assert user["name"] in ["alice", "bob"]
+```
+
+也可以只让部分参数走 indirect：
+
+```python
+@pytest.mark.parametrize("x, y", [(1, 2)], indirect=["x"])
+def test_partial(x, y):
+    ...
+```
+
+---
+
+## 三、fixture 参数化
+
+适合“多个测试共享同一组参数化资源”：
+
+```python
+@pytest.fixture(params=["dev", "staging", "prod"], ids=["dev", "stg", "prod"])
+def env(request):
+    return request.param
+
+def test_api(env):
+    assert call_api(env) == 200
+
+def test_db(env):
+    assert connect_db(env) is not None
+# 每个依赖 env 的测试都自动跑 3 次
+```
+
+可以配合 `pytest.skip` 动态跳过某些参数：
+
+```python
+@pytest.fixture(params=["dev", "prod"])
+def env(request):
+    if request.param == "prod" and not os.getenv("ALLOW_PROD"):
+        pytest.skip("prod disabled")
+    return request.param
+```
+
+## 四、动态参数化：`pytest_generate_tests`
+
+### 核心方法 metafunc.parametrize()
+
+metafunc.parametrize()提供了参数化动态加载的核心能力，每次调用 metafunc.parametrize(...)，Metafunc 都会根据参数值生成相应的 CallSpec2 对象，并将它们添加到 _calls 列表中。
+
+* CallSpec2 是对一次“计划好的”参数化调用的封装。它记录了这次调用所使用的参数值、ID 等信息。
+
+* 多次调用 parametrize 的效果：如果你针对不同参数名多次调用 parametrize，Metafunc 会计算这些参数集的笛卡尔积。例如，先参数化 x 得到 [1, 2]，再参数化 y 得到 ['a', 'b']，_calls 中最终会包含 4 个 CallSpec2 对象，对应 (1,'a'), (1,'b'), (2,'a'), (2,'b')。
+
+* 最终产物：收集阶段结束时，pytest 会遍历 metafunc._calls，为每一个 CallSpec2 对象生成一个独立的 Function 测试项（Item），其名称会带上 [id] 后缀。
+
+所以，metafunc.parametrize() 本质上是在告诉 Metafunc：“请为这个测试函数规划出这么多条执行路径，并将每条路径的参数信息记录在 _calls 里。”
+
+
+### 使用案例
+应用1：动态定义参数范围：
+
+1. 定义data参数列表
+```python
+# conftest.py
+def pytest_generate_tests(metafunc):
+    if "data" in metafunc.fixturenames:
+        metafunc.parametrize("data", [1, 2, 3])
+```
+1. 测试用例直接引用参数值
+```python
+# test_something.py
+def test_something(data):
+    assert data > 0
+```
+
+相当于：
+```python
+@pytest.mark.parametrize("data", [1, 2, 3])
+def test_something(data):
+    assert data > 0
+```
+
+使用indirect=True，让动态参数穿过fixture预处理：
+```python
+@pytest.fixture
+def data(request):
+    print(f"setup: {request.param}")
+    yield request.param * 10
+    print(f"teardown: {request.param}")
+```
+
+```python
+def pytest_generate_tests(metafunc):
+    if "data" in metafunc.fixturenames:
+        metafunc.parametrize("data", [1, 2, 3], indirect=True)
+```
+
+```python
+def test_something(data):
+    assert data > 0
+```
+
+应用2：动态加载数据集到测试用例
+```python
+# conftest.py
+def pytest_addoption(parser):
+    parser.addoption("--env", action="store", default="test", help="Environment to run against")
+
+def pytest_generate_tests(metafunc):
+    if "data" in metafunc.fixturenames:
+        env = metafunc.config.getoption("env")
+        # 根据环境加载不同的测试数据列表
+        if env == "qa":
+            test_data = load_qa_data()
+        else:
+            test_data = load_test_data()
+        metafunc.parametrize("data", test_data)
+```
+执行不同的--env参数，会加载不同的测试数据到同一个用例
+
+
+### JSON 驱动的 API 用例 应用
+
+plugin.py定义JSON文件路径的marker，pytest_generate_tests中定义hook函数
+```python
+def pytest_configure(config: pytest.Config) -> None:
+    """Register markers and initialize plugin-specific state."""
+    config.addinivalue_line(
+        "markers",
+        f"{API_CASES_MARKER}(path): load JSON-defined API cases into the "
+        "'api_case' fixture",
+    )
+
+
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    """Generate one parametrized test per JSON API case for marked tests."""
+    generate_api_cases(metafunc)
+```
+
+hook函数实现加载JSON内容到测试参数
+```python
+def generate_api_cases(metafunc: Metafunc) -> None:
+    """Parametrize a test from JSON cases when marked with ``@pytest.mark.api_cases``.
+    """
+    if API_CASE_FIXTURE not in metafunc.fixturenames:
+        return
+    marker = metafunc.definition.get_closest_marker(API_CASES_MARKER)
+    metafunc.parametrize(
+        API_CASE_FIXTURE,
+        load_api_cases(_resolve_case_directory(marker, metafunc)),
+        ids=lambda case: case.case_id,
+    )
+```
+
+详细内容在：https://github.com/sarah-mengqigu/pytest_mqplugin
+
+
+## 五、插件开发中的参数化注意点
+
+1. **只在用户请求你的 fixture 时介入**：
+
+```python
+def pytest_generate_tests(metafunc):
+    if "myplugin_case" not in metafunc.fixturenames:
+        return
+    ...
+```
+
+2. **不要覆盖用户已有的 `parametrize`**。  
+   如果用户已经手动参数化了同名参数，你的 hook 可能造成冲突。可以先检查：
+
+```python
+if metafunc.definition.get_closest_marker("parametrize"):
+    return
+```
+
+但更稳妥的做法是：**让用户显式使用你的 fixture，你只参数化这个 fixture**。
+
+3. **提供命令行选项控制行为**：
+
+```python
+parser.addoption("--myplugin-cases", default="cases.json")
+```
+
+4. **ID 要稳定**，便于用户用 `-k` 过滤。
+
+5. **在插件里定义 `pytest_generate_tests` 时，注意它会对所有测试执行**，所以第一行必须是“是否包含我的 fixture”的判断。
+
+---
+
+## 总结
+
+| 需求 | 用法 |
+| :--- | :--- |
+| 一个测试多组输入 | `@pytest.mark.parametrize` |
+| 多个测试共享参数化资源 | `@pytest.fixture(params=...)` |
+| 动态从文件/配置生成 | `pytest_generate_tests` |
+| 给单个用例加 skip/xfail/slow | `pytest.param(..., marks=...)` |
+| 参数先加工再给测试 | `indirect=True` + fixture |
+| 参数传给 fixture | `request.param` |
+| 避免组合爆炸 | 先 `--collect-only`，再用 `-m` / `-k` 分组 |
+| 插件自动参数化 | `pytest_generate_tests` + 检查 `metafunc.fixturenames` |
+
+**一句话**：`parametrize` 是“数据驱动测试”的入口，fixture params 是“资源参数化”，`pytest_generate_tests` 是“动态参数化”。静态数据用 `parametrize`，共享资源用 fixture params，外部数据/插件用 `pytest_generate_tests`。
+

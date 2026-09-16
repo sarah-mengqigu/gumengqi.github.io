@@ -1,0 +1,383 @@
+---
+layout: post
+title: 【Pytest】Fixture 开发指南
+date: 2026-02-16
+categories: Test-Engineering
+excerpt: >-  
+    fixture 提供了测试逻辑单元的系统性保障：依赖自动解析、生命周期自动管理、作用域控制、参数化、生态集成、失败定位、分层覆盖。这些保障在测试规模变大、团队协作、插件开发时，价值会急剧放大。
+---
+
+## 一、最小可用 fixture
+
+```python
+import pytest
+
+@pytest.fixture
+def sample_data():
+    return [1, 2, 3]
+
+def test_sum(sample_data):
+    assert sum(sample_data) == 6
+```
+
+三要素：
+1. 用 `@pytest.fixture` 装饰。
+2. 函数名就是 fixture 名，测试函数通过**参数名**声明依赖。
+3. `return` 的值会被注入到测试函数中。
+
+---
+
+## 二、带清理的 fixture：用 `yield`
+
+这是**最推荐的写法**，能保证无论测试成功还是失败，清理代码都会执行。
+
+```python
+@pytest.fixture
+def db_connection():
+    conn = create_connection()      # setup
+    yield conn                      # 注入给测试
+    conn.close()                    # teardown，一定会执行
+```
+
+对比旧写法（不推荐）：
+
+```python
+# 旧写法：需要 request.addfinalizer，容易漏
+@pytest.fixture
+def db_connection(request):
+    conn = create_connection()
+    request.addfinalizer(conn.close)
+    return conn
+```
+
+**要点**：
+- `yield` 之前是 setup，之后是 teardown。
+- teardown 里不要抛异常，否则会掩盖测试本身的失败。
+- 如果需要传递异常信息，可以用 `try/finally` 包裹。
+
+---
+
+## 三、控制作用域 `scope`
+
+作用域决定 fixture 的**创建和销毁频率**：
+
+| scope | 创建时机 | 销毁时机 | 覆盖范围 | 特点 | 使用场景 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`function`**（默认） | 每个测试项 setup 前，首次请求该 fixture 时 | 每个测试项 teardown 后 | 单个测试函数 / 测试项 | 完全隔离，最安全，但可能最慢 | 可变状态、临时文件/目录、数据库事务、需要独立实例的资源 |
+| **`class`** | 测试类中第一个请求该 fixture 的测试 setup 前 | 该类最后一个请求它的测试 teardown 后 | 单个测试类 | 类内共享，类间隔离 | 类内共享只读配置、类级 Mock、类内共享但无需跨类的资源 |
+| **`module`** | 模块中第一个请求该 fixture 的测试 setup 前 | 该模块最后一个请求它的测试 teardown 后 | 单个测试模块（`.py` 文件） | 文件内共享，文件间隔离 | 模块级只读配置、加载一次的大型数据集、模块级 Mock 服务 |
+| **`package`** | 包中第一个请求该 fixture 的测试 setup 前 | 该包最后一个请求它的测试 teardown 后 | 单个 Python 包（含 `__init__.py` 的目录） | 包内共享，包间隔离；使用频率较低 | 跨多个模块的测试环境、包级日志记录器、包级共享的大型资源 |
+| **`session`** | 整个会话中第一个请求该 fixture 的测试 setup 前 | 整个测试会话结束时 | 一次 `pytest` 运行中的所有测试 | 全局共享，性能最好，但状态污染风险最大 | 昂贵全局资源（数据库连接池、浏览器实例、Docker 容器）、测试服务器、只读全局配置 |
+
+
+```python
+@pytest.fixture(scope="session")   # 整个测试会话一次
+def db_pool():
+    pool = create_pool()
+    yield pool
+    pool.close()
+
+@pytest.fixture(scope="module")    # 每个测试文件一次
+def config():
+    return load_config()
+
+@pytest.fixture(scope="class")     # 每个测试类一次
+def class_resource():
+    ...
+
+@pytest.fixture(scope="function")  # 每个测试函数一次（默认）
+def temp_file(tmp_path):
+    ...
+```
+
+**选择原则**：
+
+| 资源特征 | 推荐 scope |
+| :--- | :--- |
+| 昂贵、可共享、无状态 | `session` |
+| 模块级配置、只读数据 | `module` |
+| 类内共享的对象 | `class` |
+| 可变状态、需要隔离 | `function` |
+
+**补充规则**：
+
+- **依赖方向**：窄 scope 可以依赖宽 scope，宽 scope 不能依赖窄 scope。  
+  即：`function → class → module → package → session` 方向可依赖，反向不可。
+- **默认 scope**：`function`。
+- **选择原则**：默认用 `function` 保证隔离；确认资源无状态、可安全共享且创建昂贵时，再提升 scope 优化性能。
+
+
+---
+
+## 四、fixture 之间的依赖
+
+fixture 可以互相依赖，pytest 会自动按依赖顺序解析。
+
+```python
+@pytest.fixture(scope="session")
+def api_base_url():
+    return "https://api.example.com"
+
+@pytest.fixture(scope="session")
+def api_client(api_base_url):
+    client = APIClient(api_base_url)
+    yield client
+    client.close()
+
+@pytest.fixture
+def authenticated_client(api_client, env_name):
+    api_client.login(env=env_name)
+    return api_client
+```
+
+**依赖解析规则**：
+- 同一个测试函数依赖多个 fixture 时，pytest 会构建依赖图，按拓扑顺序执行。
+- 相同 scope 的 fixture，按声明顺序执行。
+- 不要写循环依赖，pytest 会报错。
+
+---
+
+## 五、参数化 fixture
+
+让一个 fixture 提供多组数据，依赖它的测试会自动跑多次。
+
+```python
+@pytest.fixture(params=["dev", "staging", "prod"])
+def env_name(request):
+    return request.param
+
+def test_api(env_name):
+    assert call_api(env_name) == 200
+# 自动跑 3 次：dev、staging、prod
+```
+
+**带 ID 的参数化**（让测试名更可读）：
+
+```python
+@pytest.fixture(params=[
+    pytest.param("dev", id="development"),
+    pytest.param("staging", id="staging"),
+    pytest.param("prod", id="production"),
+])
+def env_name(request):
+    return request.param
+```
+
+**动态跳过某些参数**：
+
+```python
+@pytest.fixture(params=["dev", "staging", "prod"])
+def env_name(request):
+    if request.param == "prod" and not os.getenv("ALLOW_PROD"):
+        pytest.skip("prod tests disabled")
+    return request.param
+```
+
+---
+
+## 六、间接参数化 `indirect`
+
+有时你想把参数化数据传给 fixture，让 fixture 加工后再给测试用。
+
+```python
+@pytest.fixture
+def user(request):
+    # request.param 来自测试的间接参数化
+    return {"name": request.param, "id": hash(request.param)}
+
+@pytest.mark.parametrize("user", ["alice", "bob"], indirect=True)
+def test_user(user):
+    assert user["name"] in ["alice", "bob"]
+```
+
+`indirect=True` 表示：参数不直接传给测试，而是传给同名 fixture。
+
+---
+
+## 七、使用 `request` 对象
+
+`request` 是 fixture 的“运行时上下文”，提供了很多能力。
+
+### 7.1 读取测试信息
+
+```python
+@pytest.fixture
+def log_test_name(request):
+    print(f"Running: {request.node.name}")
+    return request.node.name
+```
+
+### 7.2 读取命令行选项
+
+```python
+@pytest.fixture(scope="session")
+def env(request):
+    return request.config.getoption("--env")
+```
+
+### 7.3 读取 marker
+
+```python
+@pytest.fixture
+def browser(request):
+    if request.node.get_closest_marker("ui"):
+        return launch_browser()
+    return None
+```
+
+### 7.4 动态添加 finalizer
+
+```python
+@pytest.fixture
+def resource(request):
+    r = create()
+    request.addfinalizer(r.cleanup)
+    return r
+```
+
+### 7.5 访问其他 fixture（不推荐，但有时有用）
+
+```python
+@pytest.fixture
+def dynamic(request):
+    other = request.getfixturevalue("api_client")
+    ...
+```
+
+---
+
+## 八、自动使用 `autouse`
+
+`autouse=True` 让 fixture 无需显式声明就自动生效。
+
+```python
+@pytest.fixture(autouse=True)
+def reset_env():
+    os.environ["TEST_MODE"] = "1"
+    yield
+    os.environ.pop("TEST_MODE", None)
+```
+
+**建议**：
+- 只用于**全局性的、无副作用的**准备/清理。
+- 不要滥用，否则依赖关系隐形，调试困难。
+- 可以配合 scope 限定范围：
+
+```python
+@pytest.fixture(scope="session", autouse=True)
+def setup_logging():
+    logging.basicConfig(level=logging.INFO)
+```
+
+---
+
+## 九、插件级 fixture 开发
+
+fixture 需要**暴露给用户使用**。这有几个额外要点。
+
+### 9.1 在插件模块中定义 fixture
+
+```python
+# src/pytest_myplugin/plugin.py
+import pytest
+
+@pytest.fixture
+def myplugin_client(request):
+    """提供给用户的 fixture。"""
+    config = request.config.getoption("--myplugin-endpoint")
+    client = MyPluginClient(config)
+    yield client
+    client.close()
+```
+
+用户安装插件后，**无需 import**，直接在测试里用：
+
+```python
+def test_something(myplugin_client):
+    assert myplugin_client.ping() == "pong"
+```
+
+### 9.2 命名约定
+
+插件 fixture 建议加**前缀**，避免和用户自己的 fixture 冲突：
+
+```python
+@pytest.fixture
+def myplugin_client():      # ✅ 好：有前缀
+    ...
+
+@pytest.fixture
+def client():               # ❌ 差：太通用，容易冲突
+    ...
+```
+
+### 9.3 在 conftest 中注册 fixture（仅本地测试用）
+
+```python
+# tests/conftest.py
+pytest_plugins = ["pytest_myplugin.plugin"]
+```
+
+这只是本地测试时加载插件，**发布时必须靠 `pytest11` entry point**。
+
+### 9.4 fixture 的文档
+
+插件 fixture 是用户直接使用的 API，必须写好 docstring：
+
+```python
+@pytest.fixture
+def myplugin_client(request):
+    """
+    Provide a configured client for the plugin.
+
+    Reads ``--myplugin-endpoint`` from the command line.
+    Automatically closes the client after the test.
+
+    Yields:
+        MyPluginClient: a ready-to-use client instance.
+    """
+```
+
+
+## 十、调试 fixture
+
+### 10.1 查看 fixture 解析顺序
+
+```bash
+pytest --setup-show
+```
+
+输出每个测试的 fixture setup/teardown 顺序。
+
+### 10.2 查看 fixture 定义位置
+
+```bash
+pytest --fixtures
+pytest --fixtures-per-test
+```
+
+### 10.3 在 fixture 中打印调试信息
+
+```python
+@pytest.fixture
+def debug_fixture(request):
+    print(f"\n[fixture] scope={request.scope}, node={request.node.name}")
+    yield
+```
+
+配合 `-s` 可以看到输出。
+
+---
+
+## 十二、常见陷阱
+
+| 陷阱 | 问题 | 正确做法 |
+| :--- | :--- | :--- |
+| `return` 代替 `yield` 做清理 | 清理不会执行 | 需要清理时用 `yield` |
+| 高 scope 依赖低 scope | pytest 报错 | 调整 scope 或拆分 fixture |
+| fixture 里改可变状态 | 污染其他测试 | 每次返回新对象，或用 function scope |
+| `autouse` 滥用 | 依赖隐形 | 显式声明依赖 |
+| fixture 名太通用 | 和用户冲突（插件场景） | 加插件前缀 |
+| teardown 抛异常 | 掩盖测试失败 | teardown 里 try/except |
+| fixture 里做重操作但 scope 太小 | 测试变慢 | 提升 scope 或缓存 |
+
