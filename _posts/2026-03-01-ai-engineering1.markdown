@@ -2,7 +2,7 @@
 layout: post
 title: 当Agent学会自己找知识，RAG还剩下什么？
 date: 2026-03-01
-categories: AI Engineering
+categories: AI-Engineering
 excerpt: RAG 正在从一个“生成增强技术”，重新靠近它的第一性原理——Information Retrieval。最终沉淀成 Agent 背后的信息检索基础设施
 ---
 
