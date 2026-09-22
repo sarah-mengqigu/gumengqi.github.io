@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "以状态机建模的测试工程能力提升实践"
+title: 以状态机建模的测试工程能力提升实践
 date: 2026-09-13
 categories: Test-Engineering
 excerpt: LLM模型擅长快速实现算法开发，可以通过建模，将业务问题转换成算法问题。这中间的桥梁，就是算法和大模型都易解析的建模描述文件（YAML文件）
