@@ -1,0 +1,37 @@
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  mermaid.initialize({ startOnLoad: false });
+
+  function renderMermaidBlocks(root) {
+    const blocks = Array.from(root.querySelectorAll('code.language-mermaid'));
+    blocks.forEach(function (el) {
+      const pre = el.closest('pre');
+      if (!pre) return;
+      const div = document.createElement('div');
+      div.className = 'mermaid';
+      div.textContent = el.textContent.trim();
+      pre.replaceWith(div);
+    });
+
+    if (blocks.length > 0) {
+      mermaid.run({ querySelector: '.mermaid' });
+    }
+  }
+
+  function handleContentReady() {
+    renderMermaidBlocks(document);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', handleContentReady);
+  } else {
+    handleContentReady();
+  }
+
+  /* Hydejack 走 SPA：内容被 push-state 替换后需要重新渲染 */
+  const pushState = document.querySelector('hy-push-state');
+  if (pushState && pushState.addEventListener) {
+    pushState.addEventListener('hy-push-state-load', handleContentReady);
+  }
+</script>

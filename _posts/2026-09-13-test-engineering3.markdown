@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AI辅助下的测试前移探索：MBT方式的SDT实践"
+title: AI辅助下的测试前移探索：MBT方式的SDT实践
 date: 2026-09-14
 categories: Test-Engineering
 excerpt: 一项诞生于上世纪90年代的测试理论，在AI时代可能才真正迎来它的普及
