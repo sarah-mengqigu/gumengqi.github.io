@@ -126,3 +126,15 @@
     .cv { grid-template-columns: 14rem minmax(0, 1fr); gap: 1.5rem; }
   }
 </style>
+
+{%- comment -%} 代码块/表格与正文完全齐平（去掉 Hydejack 默认 16px 背景外扩） {%- endcomment -%}
+<style>
+  .content pre,
+  .content table,
+  .content .katex-display,
+  .content mjx-container[jax][display="true"],
+  .content div.highlight > .pre-header {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+</style>

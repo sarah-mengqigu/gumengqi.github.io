@@ -62,6 +62,10 @@ plugins:
 accent_color: rgb(79,177,186)
 theme_color: rgb(25,55,71)
 
+# 关掉代码块/表格向外“撑宽”的 break layout，使其与正文对齐
+hydejack:
+  no_break_layout: true
+
 # Sass 压缩
 sass:
   style: compressed
